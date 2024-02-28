@@ -6,7 +6,7 @@ on:
       - main
   schedule:
     # https://docs.github.com/zh/actions/using-workflows/events-that-trigger-workflows#schedule
-    - cron: '0 17 * * 3' # 每周三下午5点整执行一次
+    - cron: '0 18 * * 3' # 每周三下午6点整执行一次
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
