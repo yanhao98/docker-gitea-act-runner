@@ -1,14 +1,35 @@
 name: Build and Push Docker Image
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
   schedule:
-    # https://docs.github.com/zh/actions/using-workflows/events-that-trigger-workflows#schedule
-    - cron: '0 18 * * 3' # 每周三下午6点整执行一次
+    # https://github.com/vegardit/docker-gitea-act-runner/blob/main/.github/workflows/build.yml
+    # vegardit/docker-gitea-act-runner 17时执行。在它之后执行。
+    - cron: "0 18 * * *"
+
 jobs:
+  check-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      should-run: ${{ steps.compare.outputs.different }}
+    steps:
+      - name: Compare Docker Versions
+        id: compare
+        run: |
+          version1=$(docker run --pull=always --rm --entrypoint act_runner yanhao98/gitea-act-runner --version)
+          version2=$(docker run --pull=always --rm --entrypoint act_runner gitea/act_runner:nightly --version)
+          different=$(test "$version1" != "$version2" && echo true || echo false)
+          echo "version1=$version1"
+          echo "version2=$version2"
+          echo "different=$different"
+          echo "different=$different" >> $GITHUB_OUTPUT
+
   build-and-push:
+    needs: check-versions
+    if: ${{ needs.check-versions.outputs.should-run == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check Out Repo
@@ -30,5 +51,5 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gitea-act-runner:latest
+          tags: yanhao98/gitea-act-runner:latest
           platforms: linux/amd64,linux/arm64
